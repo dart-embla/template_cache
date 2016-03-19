@@ -1,0 +1,11 @@
+name: template_cache
+
+version: 0.1.0
+
+dev_dependencies:
+  test: any
+  quark: any
+
+dependencies:
+  current_script: '>=0.0.3 <0.1.0'
+  path: '>=1.3.9 <2.0.0'
