@@ -12,7 +12,10 @@ class CacheTest extends UnitTest {
 
   @before
   setUp() {
-    cache = new Cache([new TestCompiler()], io = new TestIo());
+    cache = new Cache([
+      new XCompiler(),
+      new YCompiler()
+    ], io = new TestIo());
   }
 
   @test
@@ -41,16 +44,60 @@ class CacheTest extends UnitTest {
       r"}"
     ]);
   }
+
+  expectCompiles(String file, String contents, matcher) async {
+    io.files[new Uri.file(file)] = [contents];
+    await cache.compile(file);
+    final generatedFile = new Uri.file(path.join(genDir, 'templates', 'UID.dart'));
+    expect(io.newFiles[generatedFile], matcher);
+  }
+
+  @test
+  itChoosesTheCompilerThatHasTheExtension() async {
+    await expectCompiles('x.x', '', contains('yield "X";'));
+    await expectCompiles('y.y', '', contains('yield "Y";'));
+    await expectCompiles('z.z', 'z', contains('yield r"""z""";'));
+  }
+
+  @test
+  itRendersAnErrorPageIfTheOutputIsInvalidDartCode() async {
+    cache = new Cache([new BrokenCompiler()], io);
+    await expectCompiles('foo.broken', '', contains('yield "ERROR";'));
+  }
 }
 
-class TestCompiler implements Compiler {
+class XCompiler implements Compiler {
   final extensions = ['.x'];
   final contentType = ContentType.TEXT;
 
   Future<GeneratedTemplateCode> compile(Uri file, Stream<String> source) async {
     return new GeneratedTemplateCode(
-      'import "x";',
-      'yield """${await source.join()}""";'
+      '',
+      'yield "X";'
+    );
+  }
+}
+
+class YCompiler implements Compiler {
+  final extensions = ['.y'];
+  final contentType = ContentType.TEXT;
+
+  Future<GeneratedTemplateCode> compile(Uri file, Stream<String> source) async {
+    return new GeneratedTemplateCode(
+      '',
+      'yield "Y";'
+    );
+  }
+}
+
+class BrokenCompiler implements Compiler {
+  final extensions = ['.broken'];
+  final contentType = ContentType.TEXT;
+
+  Future<GeneratedTemplateCode> compile(Uri file, Stream<String> source) async {
+    return new GeneratedTemplateCode(
+      '',
+      'invalid dart code'
     );
   }
 }

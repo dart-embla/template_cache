@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'cache_io.dart';
 import '_gen/templates.dart' as _gen;
@@ -26,15 +27,52 @@ class Cache {
     final uri = new Uri.file(file);
     final uid = _io.uid(uri);
     final templateFile = new Uri.file(path.join(genDir, 'templates', '$uid.dart'));
-
+    final contents = await _templateFileContent(uri).toList().then(_verifyCode);
     await _io.write(
       templateFile,
-      _templateFileContent(uri)
+      new Stream<String>.fromIterable(contents)
     );
     await _io.write(
       templatesFile,
       _templatesFileContent()
     );
+  }
+
+  Future<List<String>> _verifyCode(List<String> input) async {
+    final code = input.join() + r'main() {new $_(null).render();}';
+    final tempFile = new File(path.join(templatesDir.path, '_temp${new DateTime.now().millisecondsSinceEpoch}.dart'));
+    await tempFile.writeAsString(code);
+    final onExit = new ReceivePort();
+    final onError = new ReceivePort();
+    final errorController = new StreamController();
+    onError.listen(errorController.add);
+    try {
+      await Isolate.spawnUri(
+        tempFile.uri,
+        null,
+        null,
+        onExit: onExit.sendPort,
+        onError: onError.sendPort,
+        automaticPackageResolution: true
+      );
+      await onExit.first;
+      onExit.close();
+      onError.close();
+      errorController.close();
+      final errors = await errorController.stream.toList();
+      if (errors.isEmpty) {
+        return input;
+      }
+    } on IsolateSpawnException catch(e) {
+      print(e);
+    } finally {
+      await tempFile.delete();
+    }
+    final errorGen = new GeneratedTemplateCode(
+      '',
+      'yield "ERROR";'
+    );
+    return _makeTemplate(errorGen, ContentType.HTML).toList();
   }
 
   Stream<String> render(Uri file, {Map<Symbol, dynamic> locals: const {}}) {
@@ -49,15 +87,18 @@ class Cache {
     );
     final read = _io.read(file);
     final code = await compiler.compile(file, read);
+    yield* _makeTemplate(code, compiler.contentType);
+  }
+
+  Stream<String> _makeTemplate(GeneratedTemplateCode code, ContentType contentType) async* {
     yield r"import '../../codegen_contract.dart' as _$_;";
     yield code.directives;
     yield r"class $_ extends _$_.Template {";
-    yield "\$_(_) : super('${compiler.contentType}', _);";
+    yield "\$_(_) : super('${contentType}', _);";
     yield r"render() async* {";
     yield code.renderBody;
     yield r"}";
     yield r"}";
-
   }
 
   Stream<String> _templatesFileContent() async* {
