@@ -41,7 +41,7 @@ class Cache {
 
   Stream<String> render(Uri file, {Map<Symbol, dynamic> locals: const {}}) {
     final id = _io.uid(file);
-    if (_gen.templates.containsKey(id)) {
+    if (!_gen.templates.containsKey(id)) {
       throw new Exception('${file.path} is not compiled! Try running "pub run template_cache:compile ${file.path}"');
     }
     return _gen.templates[id](locals).render();
