@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:current_script/current_script.dart';
-import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 
 import '_gen/templates.dart' as _gen;
@@ -25,25 +24,19 @@ class Cache {
     CacheIo io
   ]) : _io = io ?? new CacheIo();
 
-  Future<Null> compile(String pattern) async {
-    final glob = new Glob(pattern);
-    await for (final file in glob.list()) {
-      if (file is! File) {
-        continue;
-      }
-      final uri = file.uri;
-      final uid = _io.uid(uri);
-      final templateFile = new Uri.file(path.join(genDir, 'templates', '$uid.dart'));
-      final contents = await _templateFileContent(uri).toList().then(_verifyCode);
-      await _io.write(
-        templateFile,
-        new Stream<String>.fromIterable(contents)
-      );
-      await _io.write(
-        templatesFile,
-        _templatesFileContent()
-      );
-    }
+  Future<Null> compile(String file) async {
+    final uri = new Uri.file(file);
+    final uid = _io.uid(uri);
+    final templateFile = new Uri.file(path.join(genDir, 'templates', '$uid.dart'));
+    final contents = await _templateFileContent(uri).toList().then(_verifyCode);
+    await _io.write(
+      templateFile,
+      new Stream<String>.fromIterable(contents)
+    );
+    await _io.write(
+      templatesFile,
+      _templatesFileContent()
+    );
   }
 
   Stream<String> render(Uri file, {Map<Symbol, dynamic> locals: const {}}) {
