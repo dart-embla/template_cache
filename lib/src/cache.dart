@@ -37,6 +37,7 @@ class Cache {
       templatesFile,
       _templatesFileContent()
     );
+    print('$file compiled.');
   }
 
   Stream<String> render(Uri file, {Map<Symbol, dynamic> locals: const {}}) {
