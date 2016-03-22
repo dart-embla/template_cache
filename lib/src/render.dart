@@ -10,5 +10,7 @@ Stream<String> render(String file, {Map<Symbol, dynamic> locals: const {}}) {
 
 Template view(String file, {Map<Symbol, dynamic> locals: const {}}) {
   final id = uid(new Uri.file(file));
+  print(_gen.templates);
+  print(id);
   return _gen.templates[id](locals);
 }
