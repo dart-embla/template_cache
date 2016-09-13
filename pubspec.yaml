@@ -2,6 +2,7 @@ name: template_cache
 
 author: Emil Persson <emil.n.persson@gmail.com>
 homepage: https://github.com/dart-embla/template_cache
+description: A base for templating languages to be compiled to native Dart code
 
 version: 0.1.0
 
