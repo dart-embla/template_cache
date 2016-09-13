@@ -5,7 +5,11 @@ import 'codegen_contract.dart' show Template;
 export 'codegen_contract.dart' show Template;
 
 Stream<String> render(String file, {Map<Symbol, dynamic> locals: const {}}) {
-  return view(file, locals: locals).render();
+  // Indirection to make sure output stream is instance of
+  // [Stream<String>] and not [Stream<dynamic>].
+  final controller = new StreamController<String>();
+  view(file, locals: locals).render().pipe(controller);
+  return controller.stream;
 }
 
 Template view(String file, {Map<Symbol, dynamic> locals: const {}}) {

@@ -34,11 +34,12 @@ class CacheTest extends UnitTest {
     ]);
     final generatedFile = new Uri.file(path.join(genDir, 'templates', 'UID.dart'));
     expect(io.newFiles[generatedFile], [
+      "import 'dart:async';",
       r"import '../../codegen_contract.dart' as _$_;",
       r'',
       r"class $_ extends _$_.Template {",
       r"$_(_) : super('text/plain; charset=utf-8', _);",
-      r"render() async* {",
+      r"Stream<String> render() async* {",
       r'''yield r"""x"""'"""'r"""y""";''',
       r"}",
       r"}"

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 
 import '_gen/templates.dart' as _gen;
 import 'cache_io.dart';
+import '../plain_text_compiler.dart';
 
 export 'dart:io' show ContentType;
 
@@ -37,7 +38,6 @@ class Cache {
       templatesFile,
       _templatesFileContent()
     );
-    print('$file compiled.');
   }
 
   Stream<String> render(Uri file, {Map<Symbol, dynamic> locals: const {}}) {
@@ -49,11 +49,12 @@ class Cache {
   }
 
   Stream<String> _makeTemplate(GeneratedTemplateCode code, ContentType contentType) async* {
+    yield r"import 'dart:async';";
     yield r"import '../../codegen_contract.dart' as _$_;";
     yield code.directives;
     yield r"class $_ extends _$_.Template {";
     yield "\$_(_) : super('${contentType}', _);";
-    yield r"render() async* {";
+    yield r"Stream<String> render() async* {";
     yield code.renderBody;
     yield r"}";
     yield r"}";
@@ -141,14 +142,4 @@ class GeneratedTemplateCode {
   final String renderBody;
 
   GeneratedTemplateCode(this.directives, this.renderBody);
-}
-
-class PlainTextCompiler implements Compiler {
-  final ContentType contentType = ContentType.TEXT;
-  final Iterable<String> extensions = null;
-
-  Future<GeneratedTemplateCode> compile(Uri file, Stream<String> source) async {
-    final content = (await source.join()).replaceAll('"""', '''"""'"""'r"""''');
-    return new GeneratedTemplateCode('', 'yield r"""$content""";');
-  }
 }

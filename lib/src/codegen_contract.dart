@@ -38,4 +38,3 @@ abstract class Template {
     return super.noSuchMethod(invocation);
   }
 }
-
