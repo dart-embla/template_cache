@@ -1,5 +1,8 @@
 name: template_cache
 
+author: Emil Persson <emil.n.persson@gmail.com>
+homepage: https://github.com/dart-embla/template_cache
+
 version: 0.1.0
 
 dev_dependencies:
